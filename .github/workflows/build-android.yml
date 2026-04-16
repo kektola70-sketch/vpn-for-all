@@ -2,7 +2,7 @@ name: Build Android APK
 
 on:
   push:
-    branches: [ main ] # Сборка начнется при каждом сохранении в ветку main
+    branches: [ main ]
 
 jobs:
   build:
@@ -16,6 +16,19 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
+
+      - name: Download Xray Core
+        run: |
+          mkdir -p app/src/main/assets
+          wget https://github.com/XTLS/Xray-core/releases/latest/download/Xray-android-arm64-v8a.zip -O xray.zip
+          unzip -o xray.zip -d app/src/main/assets/
+          # Проверяем, есть ли файл xray, и переименовываем его для нашего приложения
+          if [ -f app/src/main/assets/xray ]; then
+            mv app/src/main/assets/xray app/src/main/assets/xray_binary
+          fi
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
 
       - name: Build with Gradle
         run: ./gradlew assembleDebug
