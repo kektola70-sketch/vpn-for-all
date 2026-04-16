@@ -3,6 +3,7 @@ package com.myvpn
 import android.os.Bundle
 import android.widget.Button
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import java.io.File
 import java.io.FileOutputStream
@@ -19,26 +20,29 @@ class MainActivity : AppCompatActivity() {
         val tvStatus = findViewById<TextView>(R.id.tvStatus)
 
         btnConnect.setOnClickListener {
-            tvStatus.text = "Статус: Запускаю..."
-            runVpn()
-        }
-    }
-
-    private fun runVpn() {
-        val file = File(filesDir, "xray")
-        // Копируем файл из assets в память
-        assets.open("xray_binary").use { input ->
-            FileOutputStream(file).use { output ->
-                input.copyTo(output)
+            tvStatus.text = "Статус: Подготовка..."
+            
+            try {
+                // Копируем файл из assets (куда его положил GitHub Actions) в папку данных приложения
+                val binaryFile = File(filesDir, "xray_binary")
+                if (!binaryFile.exists()) {
+                    assets.open("xray_binary").use { input ->
+                        FileOutputStream(binaryFile).use { output ->
+                            input.copyTo(output)
+                        }
+                    }
+                }
+                
+                // Даем права на выполнение
+                binaryFile.setExecutable(true)
+                
+                tvStatus.text = "Статус: Движок готов (тест завершен)"
+                Toast.makeText(this, "Бинарник Xray готов к запуску!", Toast.LENGTH_LONG).show()
+                
+            } catch (e: Exception) {
+                tvStatus.text = "Статус: Ошибка!"
+                Toast.makeText(this, "Ошибка: ${e.message}", Toast.LENGTH_LONG).show()
             }
         }
-        file.setExecutable(true) // Даем права на запуск
-
-        // Запуск (это упрощенный пример)
-        val process = ProcessBuilder(file.absolutePath, "run", "-c", "твоя_ссылка_или_config.json")
-            .redirectErrorStream(true)
-            .start()
-            
-        // В реальном приложении тут нужен цикл для чтения логов
     }
 }
